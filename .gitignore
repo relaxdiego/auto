@@ -1,0 +1,11 @@
+!.gitkeep
+*.pyc
+.coverage
+.DS_Store
+htmlcov/
+.tox/
+MANIFEST
+*.egg-info/
+coverage.xml
+temp/
+*.log

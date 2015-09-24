@@ -1,0 +1,78 @@
+#! /usr/bin/env python
+
+import argparse
+import logging
+import logging.config
+import pytest
+import sys
+
+
+# ====
+# MAIN
+# ====
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog="tox -e run_app_tests --",
+        description='Execute one or more test cases. Take note of the \'--\' '
+        'before the test case arguments. This is to separate the arguments '
+        'for run_app_tests from the arguments for tox.')
+
+    parser.add_argument('-r', '--random-seed', required=False,
+                        dest='random_seed', metavar='INTEGER', action='store',
+                        help='Random seed for randomizing the tests')
+
+    parser.add_argument('-e', '--envsitepackagesdir', required=True,
+                        dest='envsitepackagesdir', metavar='PATH',
+                        action='store', help='Where tox stores the goods')
+
+    parser.add_argument('test_path', action='store', nargs='?',
+                        default=None,
+                        help='Which test case to run. Runs all test cases '
+                        'if no path is specified')
+
+    args = parser.parse_args()
+
+    logging.config.dictConfig({
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'simple': {
+                'format': '%(asctime)s  %(name)-16s %(levelname)-7s %(message)s'  # NOQA
+            }
+        },
+        'handlers': {
+            'file': {
+                'class': 'logging.handlers.RotatingFileHandler',
+                'formatter': 'simple',
+                'filename': 'app_tests.log'
+            }
+        },
+        'root': {
+            'level': 'INFO',
+            'handlers': [
+                'file'
+            ]
+        }
+    })
+
+    # Build the pytest arguments
+    pytest_args = ["--random", "-s"]
+
+    if args.random_seed:
+        pytest_args.append("--random-seed %s" % args.random_seed)
+
+    pytest_args.append("--cov %s/app" % args.envsitepackagesdir)
+    pytest_args.append("--cov-report term")
+    pytest_args.append("--cov-report html")
+
+    if not args.test_path:
+        pytest_args.append("app_tests")
+    else:
+        pytest_args.append(args.test_path)
+
+    return pytest.main(" ".join(pytest_args))
+
+if __name__ == "__main__":
+    exit_code = main()
+    sys.exit(exit_code)
